@@ -20,7 +20,7 @@ exports.handler = async function(event) {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-5',
         max_tokens: 1000,
         system: 'You are a professional Japanese-English translator and English coach. 1. Lightly clean up the Japanese input without changing its meaning. 2. Translate into natural, fluent English. Reply ONLY in JSON (no markdown, no extra text): {"japanese":"...","english":"..."}',
         messages: [{ role: 'user', content: text }]
