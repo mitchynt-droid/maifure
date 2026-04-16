@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>マイフレ（毎日英会話フレーズ）音声翻訳レコーダー</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F5F4F0; color: #1a1a1a; min-height: 100vh; padding: 1.5rem; }
+  .app { max-width: 660px; margin: 0 auto; }
+
+  .header { display: flex; align-items: center; gap: 14px; padding: 1rem 1.25rem; background: #fff; border: 1px solid #e5e3dc; border-radius: 14px; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .avatar { width: 64px; height: 64px; border-radius: 50%; overflow: hidden; border: 2.5px solid #81D8D0; flex-shrink: 0; }
+  .avatar img { width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+  .header-text h1 { font-size: 17px; font-weight: 600; }
+  .header-text p { font-size: 12px; color: #666; margin-top: 2px; }
+  .badge { display: inline-block; font-size: 10px; padding: 2px 9px; border-radius: 100px; background: #E8F9F8; color: #088F8A; margin-top: 5px; font-weight: 600; }
+
+  .client-bar { background: #fff; border: 1px solid #e5e3dc; border-radius: 12px; padding: 0.85rem 1.25rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 10px; }
+  .client-bar label { font-size: 12px; font-weight: 600; color: #888; white-space: nowrap; }
+  .client-bar input { flex: 1; padding: 7px 10px; font-size: 14px; font-family: inherit; border: 1px solid #ddd; border-radius: 8px; background: #fafaf8; color: #1a1a1a; }
+  .client-bar input:focus { outline: none; border-color: #0ABAB5; }
+  .client-status { font-size: 11px; padding: 3px 9px; border-radius: 100px; white-space: nowrap; }
+  .client-status.ok { background: #E1F5EE; color: #0F6E56; }
+  .client-status.empty { background: #fef9e7; color: #9a6700; }
+
+  .tabs { display: flex; gap: 2px; background: #e9e7e0; border-radius: 12px; padding: 4px; margin-bottom: 1rem; }
+  .tab { flex: 1; padding: 9px; font-size: 13px; font-weight: 500; border: none; border-radius: 9px; cursor: pointer; background: transparent; color: #666; }
+  .tab.active { background: #fff; color: #1a1a1a; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+  .card { background: #fff; border: 1px solid #e5e3dc; border-radius: 14px; padding: 1.25rem; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  label.field-label { display: block; font-size: 11px; font-weight: 600; color: #888; margin-bottom: 6px; letter-spacing: 0.06em; text-transform: uppercase; }
+  textarea { width: 100%; min-height: 95px; padding: 10px 12px; font-size: 15px; font-family: inherit; border: 1px solid #ddd; border-radius: 9px; background: #fafaf8; color: #1a1a1a; resize: vertical; line-height: 1.6; }
+  textarea:focus { outline: none; border-color: #0ABAB5; }
+  textarea::placeholder { color: #bbb; }
+
+  .btn-primary { width: 100%; padding: 12px; font-size: 14px; font-weight: 600; border: none; border-radius: 9px; cursor: pointer; background: #0ABAB5; color: #fff; margin-top: 12px; }
+  .btn-primary:hover { background: #088F8A; }
+  .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn-outline { padding: 8px 16px; font-size: 13px; font-weight: 500; border: 1px solid #ddd; border-radius: 9px; cursor: pointer; background: transparent; color: #1a1a1a; }
+  .btn-outline:hover { background: #f5f4f0; }
+  .btn-save { padding: 8px 20px; font-size: 13px; font-weight: 600; border: none; border-radius: 9px; cursor: pointer; background: #1D9E75; color: #fff; }
+  .btn-save:hover { background: #0F6E56; }
+  .btn-save:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  .lang-lbl { font-size: 10px; font-weight: 700; color: #999; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 5px; }
+  .text-box { font-size: 14px; line-height: 1.75; padding: 10px 12px; background: #fafaf8; border-radius: 9px; border: 1px solid #e5e3dc; }
+  .en-box { border-left: 3px solid #0ABAB5; background: #E8F9F8; }
+  .sep { height: 1px; background: #e5e3dc; margin: 12px 0; }
+  .confirm-row { display: flex; align-items: center; justify-content: space-between; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e3dc; flex-wrap: wrap; gap: 8px; }
+  .confirm-msg { font-size: 13px; color: #666; }
+  .btn-row { display: flex; gap: 8px; }
+
+  .sending-overlay { display: none; align-items: center; gap: 8px; font-size: 13px; color: #0ABAB5; padding: 8px 0; }
+  .sending-overlay.active { display: flex; }
+
+  .loading { display: flex; align-items: center; gap: 9px; color: #888; font-size: 13px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: #0ABAB5; animation: pulse 1.2s infinite; }
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes pulse { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
+
+  .toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%); padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 600; pointer-events: none; z-index: 100; white-space: nowrap; transition: opacity 0.3s; }
+  .toast.success { background: #1D9E75; color: #fff; }
+  .toast.error { background: #E24B4A; color: #fff; }
+  .toast.info { background: #0ABAB5; color: #fff; }
+  .toast.hidden { opacity: 0; }
+
+  .empty { text-align: center; padding: 2.5rem 1rem; color: #bbb; font-size: 13px; }
+  .h-item { border: 1px solid #e5e3dc; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 0.75rem; background: #fff; }
+  .h-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 4px; }
+  .h-meta-left { display: flex; align-items: center; gap: 8px; }
+  .h-date { font-size: 11px; color: #bbb; }
+  .h-client { font-size: 11px; font-weight: 600; color: #0ABAB5; background: #E8F9F8; padding: 1px 8px; border-radius: 100px; }
+  .btn-del { font-size: 11px; color: #bbb; background: none; border: none; cursor: pointer; padding: 2px 6px; border-radius: 4px; }
+  .btn-del:hover { color: #E24B4A; }
+  .h-ja { font-size: 12px; color: #888; margin-bottom: 5px; }
+  .h-en { font-size: 13px; border-left: 2px solid #0ABAB5; padding-left: 8px; line-height: 1.6; }
+  .h-sent { font-size: 10px; color: #1D9E75; margin-top: 5px; }
+  .h-notsent { font-size: 10px; color: #bbb; margin-top: 5px; }
+
+  .export-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+  .cnt-badge { font-size: 12px; color: #888; background: #f0eeea; padding: 4px 12px; border-radius: 100px; border: 1px solid #e5e3dc; }
+
+  .setup-banner { background: #FFF8E7; border: 1px solid #fad47a; border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1rem; }
+  .setup-banner p { font-size: 13px; color: #7a5500; line-height: 1.6; }
+  .setup-banner strong { font-weight: 700; }
+  .setup-url-row { display: flex; gap: 8px; margin-top: 10px; }
+  .setup-url-input { flex: 1; padding: 8px 10px; font-size: 12px; font-family: monospace; border: 1px solid #ddd; border-radius: 8px; background: #fff; }
+  .btn-setup { padding: 8px 14px; font-size: 12px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; background: #0ABAB5; color: #fff; white-space: nowrap; }
+
+  /* マイクボタン */
+  .textarea-wrap { position: relative; }
+  .mic-btn { position: absolute; bottom: 10px; right: 10px; width: 38px; height: 38px; border-radius: 50%; border: none; cursor: pointer; background: #0ABAB5; color: #fff; display: flex; align-items: center; justify-content: center; transition: all 0.2s; box-shadow: 0 2px 6px rgba(10,186,181,0.35); }
+  .mic-btn:hover { background: #088F8A; transform: scale(1.05); }
+  .mic-btn.recording { background: #E24B4A; animation: micPulse 1s infinite; box-shadow: 0 2px 12px rgba(226,75,74,0.5); }
+  .mic-btn svg { width: 18px; height: 18px; fill: #fff; pointer-events: none; }
+  @keyframes micPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.12)} }
+  .mic-status { font-size: 11px; color: #E24B4A; font-weight: 600; margin-top: 6px; min-height: 16px; text-align: right; }
+  .mic-status.hidden { visibility: hidden; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ヘッダー -->
+  <div class="header">
+    <div class="avatar">
+      <img src="data:image/jpeg;base64,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" alt="コーチ">
+    </div>
+    <div class="header-text">
+      <h1>マイフレ（毎日英会話フレーズ）音声翻訳レコーダー</h1>
+      <p>日本語 → 英語翻訳 &amp; 記録ツール</p>
+      <span class="badge">English Coach</span>
+    </div>
+  </div>
+
+  <!-- メールアドレス登録バナー（未登録時のみ表示） -->
+  <div class="setup-banner" id="setupBanner">
+    <p><strong>📧 メールアドレスを登録してください</strong><br>
+    翻訳の記録をコーチと共有するために使用します。</p>
+    <div class="setup-url-row">
+      <input type="email" class="setup-url-input" id="bannerEmailInput" placeholder="your@email.com">
+      <button class="btn-setup" onclick="saveBannerEmail()">登録する</button>
+    </div>
+  </div>
+
+  <!-- クライアント名バー -->
+  <div class="client-bar">
+    <label>あなたの名前：</label>
+    <input type="text" id="clientName" placeholder="例：田中さくら" oninput="updateClientStatus()">
+    <span class="client-status empty" id="clientStatus">未入力</span>
+  </div>
+
+  <!-- タブ -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('translate')">翻訳する</button>
+    <button class="tab" onclick="switchTab('history')">保存した翻訳</button>
+  </div>
+
+  <!-- 翻訳タブ -->
+  <div id="tab-translate">
+    <div class="card">
+      <label class="field-label">日本語テキスト</label>
+      <div class="textarea-wrap">
+        <textarea id="inputText" placeholder="ここに日本語を入力してください。&#10;（音声文字起こしのテキストでもOK！）" style="padding-bottom: 56px;"></textarea>
+        <button class="mic-btn" id="micBtn" onclick="toggleMic()" title="音声入力">
+          <svg id="micIcon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 1a4 4 0 0 1 4 4v6a4 4 0 0 1-8 0V5a4 4 0 0 1 4-4zm0 2a2 2 0 0 0-2 2v6a2 2 0 0 0 4 0V5a2 2 0 0 0-2-2zm-1 15.93V21H9v2h6v-2h-2v-2.07A8 8 0 0 0 20 11h-2a6 6 0 0 1-12 0H4a8 8 0 0 0 7 7.93z"/></svg>
+        </button>
+      </div>
+      <div class="mic-status hidden" id="micStatus">🎤 録音中...（もう一度押すと停止）</div>
+      <button class="btn-primary" id="translateBtn" onclick="doTranslate()">翻訳する</button>
+    </div>
+
+    <div id="loadingArea" style="display:none;">
+      <div class="card"><div class="loading"><div class="dot"></div><div class="dot"></div><div class="dot"></div><span>翻訳中です...</span></div></div>
+    </div>
+
+    <div id="resultArea" style="display:none;">
+      <div class="card">
+        <div class="lang-lbl">日本語</div>
+        <div class="text-box" id="jaText"></div>
+        <div class="sep"></div>
+        <div class="lang-lbl">英語</div>
+        <div class="text-box en-box" id="enText"></div>
+        <div class="confirm-row">
+          <span class="confirm-msg">この翻訳を保存しますか？</span>
+          <div class="btn-row">
+            <button class="btn-outline" onclick="clearResult()">キャンセル</button>
+            <button class="btn-save" id="saveBtn" onclick="saveEntry()">💾 保存してコーチに送る</button>
+          </div>
+        </div>
+        <div class="sending-overlay" id="sendingOverlay">
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          <span>コーチに送信中...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 履歴タブ -->
+  <div id="tab-history" style="display:none;">
+    <div class="export-row">
+      <span class="cnt-badge" id="cntBadge">0 件</span>
+      <button class="btn-outline" onclick="exportCSV()">CSV エクスポート</button>
+    </div>
+    <div id="historyList"></div>
+  </div>
+
+</div>
+<div class="toast hidden" id="toast"></div>
+
+<!-- API KEY セットアップモーダル -->
+<div id="apiKeyModal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:200;">
+  <div style="background:#fff;border-radius:16px;padding:2rem;max-width:400px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+    <div style="text-align:center;margin-bottom:1rem;">
+      <span style="font-size:28px;">🎉</span>
+      <h2 style="font-size:16px;font-weight:600;margin-top:6px;">マイフレへようこそ！</h2>
+      <p style="font-size:12px;color:#888;margin-top:4px;">毎日英会話フレーズ 音声翻訳レコーダー</p>
+    </div>
+    <p style="font-size:13px;color:#666;margin-bottom:14px;line-height:1.7;">はじめにメールアドレスを登録してください。</p>
+    <input type="email" id="emailInput" placeholder="your@email.com" style="width:100%;padding:10px 12px;font-size:14px;border:1px solid #ddd;border-radius:9px;margin-bottom:14px;font-family:inherit;">
+    <span style="display:block;background:#E8F9F8;border-left:3px solid #0ABAB5;padding:10px 12px;border-radius:0 8px 8px 0;color:#1a1a1a;font-size:12px;line-height:1.8;margin-bottom:16px;">
+      ✅ コーチング受講期間は<strong>無料でご利用いただけます。</strong><br>
+      📩 終了後も自己使用で引き続き使いたい場合は、<strong>コーチまでご連絡ください。</strong>
+    </span>
+    <button onclick="saveEmail()" style="width:100%;padding:11px;font-size:14px;font-weight:600;border:none;border-radius:9px;cursor:pointer;background:#0ABAB5;color:#fff;">始める</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+//  設定・初期化
+// ============================================================
+let cJa = '', cEn = '';
+const EMBEDDED_API_KEY = "dummy";
+let API_KEY = EMBEDDED_API_KEY;
+let WEBHOOK_URL = localStorage.getItem('webhook_url') || '';
+
+function init() {
+  // メール登録済みかチェック
+  const savedEmail = localStorage.getItem('user_email') || '';
+  if (savedEmail) {
+    document.getElementById('apiKeyModal').style.display = 'none';
+  }
+  if (localStorage.getItem('user_email')) document.getElementById('setupBanner').style.display = 'none';
+
+  const savedName = localStorage.getItem('client_name') || '';
+  if (savedName) {
+    document.getElementById('clientName').value = savedName;
+    updateClientStatus();
+  }
+  loadHistory();
+}
+init();
+
+// ============================================================
+//  設定系
+// ============================================================
+function saveEmail() {
+  const email = document.getElementById('emailInput').value.trim();
+  if (!email || !email.includes('@')) {
+    alert('有効なメールアドレスを入力してください');
+    return;
+  }
+  localStorage.setItem('user_email', email);
+  document.getElementById('apiKeyModal').style.display = 'none';
+}
+
+function saveWebhookUrl() {
+  const url = document.getElementById('webhookInput') ? document.getElementById('webhookInput').value.trim() : '';
+  if (!url || !url.startsWith('https://')) return;
+  localStorage.setItem('webhook_url', url);
+  WEBHOOK_URL = url;
+  document.getElementById('setupBanner').style.display = 'none';
+}
+
+function saveBannerEmail() {
+  const email = document.getElementById('bannerEmailInput').value.trim();
+  if (!email || !email.includes('@')) { showToast('有効なメールアドレスを入力してください', 'error'); return; }
+  localStorage.setItem('user_email', email);
+  document.getElementById('setupBanner').style.display = 'none';
+  showToast('メールアドレスを登録しました！', 'success');
+}
+
+function updateClientStatus() {
+  const name = document.getElementById('clientName').value.trim();
+  const status = document.getElementById('clientStatus');
+  if (name) {
+    status.textContent = '✓ ' + name;
+    status.className = 'client-status ok';
+    localStorage.setItem('client_name', name);
+  } else {
+    status.textContent = '未入力';
+    status.className = 'client-status empty';
+  }
+}
+
+// ============================================================
+//  翻訳
+// ============================================================
+async function doTranslate() {
+
+  const inp = document.getElementById('inputText').value.trim();
+  if (!inp) { showToast('テキストを入力してください', 'error'); return; }
+
+  document.getElementById('resultArea').style.display = 'none';
+  document.getElementById('loadingArea').style.display = 'block';
+  document.getElementById('translateBtn').disabled = true;
+
+  try {
+    const res = await fetch('/.netlify/functions/translate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: inp })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+    const p = data;
+    cJa = p.japanese; cEn = p.english;
+    document.getElementById('jaText').textContent = cJa;
+    document.getElementById('enText').textContent = cEn;
+    document.getElementById('loadingArea').style.display = 'none';
+    document.getElementById('resultArea').style.display = 'block';
+  } catch(e) {
+    document.getElementById('loadingArea').style.display = 'none';
+    showToast('翻訳エラー: ' + e.message, 'error');
+  } finally {
+    document.getElementById('translateBtn').disabled = false;
+  }
+}
+
+// ============================================================
+//  保存 ＆ コーチへの通知
+// ============================================================
+async function saveEntry() {
+  if (!cJa || !cEn) return;
+
+  const clientName = document.getElementById('clientName').value.trim() || '（名前未設定）';
+  const entry = {
+    id: Date.now().toString(),
+    timestamp: new Date().toISOString(),
+    clientName,
+    japanese: cJa,
+    english: cEn,
+    sentToCoach: false
+  };
+
+  // ローカル保存
+  let ex = JSON.parse(localStorage.getItem('translations') || '[]');
+  ex.unshift(entry);
+  localStorage.setItem('translations', JSON.stringify(ex));
+
+  // コーチへ送信
+  if (WEBHOOK_URL) {
+    document.getElementById('saveBtn').disabled = true;
+    document.getElementById('sendingOverlay').classList.add('active');
+
+    try {
+      await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entry),
+        mode: 'no-cors' // Google Apps Script は no-cors で OK
+      });
+      entry.sentToCoach = true;
+      // ローカルデータを更新
+      ex[0].sentToCoach = true;
+      localStorage.setItem('translations', JSON.stringify(ex));
+      showToast('保存 ＆ コーチに送信しました！ 📨', 'success');
+    } catch(e) {
+      showToast('ローカルに保存しました（通知は失敗）', 'info');
+    } finally {
+      document.getElementById('saveBtn').disabled = false;
+      document.getElementById('sendingOverlay').classList.remove('active');
+    }
+  } else {
+    showToast('ローカルに保存しました', 'success');
+  }
+
+  clearResult();
+  renderHistory(JSON.parse(localStorage.getItem('translations') || '[]'));
+}
+
+// ============================================================
+//  履歴
+// ============================================================
+function loadHistory() {
+  renderHistory(JSON.parse(localStorage.getItem('translations') || '[]'));
+}
+
+function renderHistory(data) {
+  document.getElementById('cntBadge').textContent = data.length + ' 件';
+  const list = document.getElementById('historyList');
+  if (!data.length) { list.innerHTML = '<div class="empty">保存した翻訳はまだありません</div>'; return; }
+  list.innerHTML = data.map(e => {
+    const d = new Date(e.timestamp);
+    const fmt = d.getFullYear() + '/' + pad(d.getMonth()+1) + '/' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    const sentTag = e.sentToCoach
+      ? '<div class="h-sent">📨 コーチに送信済み</div>'
+      : '<div class="h-notsent">📌 ローカルのみ</div>';
+    return `<div class="h-item">
+      <div class="h-meta">
+        <div class="h-meta-left">
+          <span class="h-date">${fmt}</span>
+          ${e.clientName ? `<span class="h-client">${esc(e.clientName)}</span>` : ''}
+        </div>
+        <button class="btn-del" onclick="deleteEntry('${e.id}')">削除</button>
+      </div>
+      <div class="h-ja">${esc(e.japanese)}</div>
+      <div class="h-en">${esc(e.english)}</div>
+      ${sentTag}
+    </div>`;
+  }).join('');
+}
+
+function deleteEntry(id) {
+  let ex = JSON.parse(localStorage.getItem('translations') || '[]');
+  ex = ex.filter(e => e.id !== id);
+  localStorage.setItem('translations', JSON.stringify(ex));
+  renderHistory(ex);
+  showToast('削除しました', 'success');
+}
+
+function exportCSV() {
+  const data = JSON.parse(localStorage.getItem('translations') || '[]');
+  if (!data.length) { showToast('エクスポートするデータがありません', 'error'); return; }
+  const rows = [['日時','クライアント名','日本語','英語','コーチ送信'],
+    ...data.map(e => [new Date(e.timestamp).toLocaleString('ja-JP'), e.clientName||'', e.japanese, e.english, e.sentToCoach?'済':'未'])];
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF' + csv], {type: 'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `translations_${Date.now()}.csv`; a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSVをダウンロードしました！', 'success');
+}
+
+// ============================================================
+//  ユーティリティ
+// ============================================================
+function clearResult() {
+  document.getElementById('resultArea').style.display = 'none';
+  document.getElementById('inputText').value = '';
+  cJa = ''; cEn = '';
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='translate')||(i===1&&tab==='history')));
+  document.getElementById('tab-translate').style.display = tab==='translate' ? 'block' : 'none';
+  document.getElementById('tab-history').style.display  = tab==='history'   ? 'block' : 'none';
+  if (tab === 'history') loadHistory();
+}
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'toast ' + type;
+  setTimeout(() => t.classList.add('hidden'), 2800);
+}
+
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function pad(n) { return String(n).padStart(2,'0'); }
+
+// ============================================================
+//  音声入力（マイク）
+// ============================================================
+let recognition = null;
+let isRecording = false;
+
+function toggleMic() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    showToast('このブラウザは音声入力に対応していません（Chrome推奨）', 'error');
+    return;
+  }
+  if (isRecording) {
+    recognition.stop();
+  } else {
+    recognition = new SpeechRecognition();
+    recognition.lang = 'ja-JP';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    let finalTranscript = document.getElementById('inputText').value;
+    recognition.onstart = () => {
+      isRecording = true;
+      document.getElementById('micBtn').classList.add('recording');
+      document.getElementById('micStatus').classList.remove('hidden');
+    };
+    recognition.onresult = (e) => {
+      let interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) {
+          finalTranscript += e.results[i][0].transcript;
+        } else {
+          interim += e.results[i][0].transcript;
+        }
+      }
+      document.getElementById('inputText').value = finalTranscript + interim;
+    };
+    recognition.onend = () => {
+      isRecording = false;
+      document.getElementById('micBtn').classList.remove('recording');
+      document.getElementById('micStatus').classList.add('hidden');
+      document.getElementById('inputText').value = finalTranscript;
+    };
+    recognition.onerror = (e) => {
+      isRecording = false;
+      document.getElementById('micBtn').classList.remove('recording');
+      document.getElementById('micStatus').classList.add('hidden');
+      if (e.error === 'not-allowed') {
+        showToast('マイクへのアクセスを許可してください', 'error');
+      } else if (e.error !== 'no-speech') {
+        showToast('音声認識エラー: ' + e.error, 'error');
+      }
+    };
+    recognition.start();
+  }
+}
+</script>
+</body>
+</html>
