@@ -465,7 +465,7 @@ function speakEnglish() {
 
   // 英語の声を選択
   const voices = window.speechSynthesis.getVoices();
-  const enVoice = voices.find(v => v.lang.startsWith('en') && v.localService);
+const enVoice = voices.find(v => v.lang === 'en-US' && v.name.includes('Samantha')) || voices.find(v => v.lang === 'en-US' && !v.name.includes('Google')) || voices.find(v => v.lang.startsWith('en-US')) || voices.find(v => v.lang.startsWith('en'));
   if (enVoice) utter.voice = enVoice;
 
   btn.classList.add('speaking');
