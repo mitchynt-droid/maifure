@@ -46,6 +46,10 @@
   .lang-lbl { font-size: 10px; font-weight: 700; color: #999; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 5px; }
   .text-box { font-size: 14px; line-height: 1.75; padding: 10px 12px; background: #fafaf8; border-radius: 9px; border: 1px solid #e5e3dc; }
   .en-box { border-left: 3px solid #0ABAB5; background: #E8F9F8; }
+  .speak-btn { display: flex; align-items: center; gap: 6px; margin-top: 8px; padding: 7px 14px; font-size: 13px; font-weight: 500; border: 1px solid #0ABAB5; border-radius: 9px; cursor: pointer; background: transparent; color: #0ABAB5; transition: all 0.15s; }
+  .speak-btn:hover { background: #E8F9F8; }
+  .speak-btn.speaking { background: #0ABAB5; color: #fff; }
+  .speak-btn svg { width: 15px; height: 15px; fill: currentColor; flex-shrink: 0; }
   .sep { height: 1px; background: #e5e3dc; margin: 12px 0; }
   .confirm-row { display: flex; align-items: center; justify-content: space-between; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e3dc; flex-wrap: wrap; gap: 8px; }
   .confirm-msg { font-size: 13px; color: #666; }
@@ -163,6 +167,10 @@
         <div class="sep"></div>
         <div class="lang-lbl">英語</div>
         <div class="text-box en-box" id="enText"></div>
+        <button class="speak-btn" id="speakBtn" onclick="speakEnglish()" style="display:none;">
+          <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+          英語を聞く
+        </button>
         <div class="confirm-row">
           <span class="confirm-msg">この翻訳を保存しますか？</span>
           <div class="btn-row">
@@ -215,7 +223,7 @@
 let cJa = '', cEn = '';
 const EMBEDDED_API_KEY = "dummy";
 let API_KEY = EMBEDDED_API_KEY;
-let WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbwmX-s57cr8u8uy-iVpqxm4Tc_c3nKwYTsa5WuNIJbC2vJ2HwcLVPRkGUVBqnT8YhkC/exec';
+let WEBHOOK_URL = localStorage.getItem('webhook_url') || '';
 
 function init() {
   // メール登録済みかチェック
@@ -300,6 +308,7 @@ async function doTranslate() {
     cJa = p.japanese; cEn = p.english;
     document.getElementById('jaText').textContent = cJa;
     document.getElementById('enText').textContent = cEn;
+    document.getElementById('speakBtn').style.display = 'flex';
     document.getElementById('loadingArea').style.display = 'none';
     document.getElementById('resultArea').style.display = 'block';
   } catch(e) {
@@ -421,6 +430,8 @@ function exportCSV() {
 function clearResult() {
   document.getElementById('resultArea').style.display = 'none';
   document.getElementById('inputText').value = '';
+  document.getElementById('speakBtn').style.display = 'none';
+  window.speechSynthesis && window.speechSynthesis.cancel();
   cJa = ''; cEn = '';
 }
 
@@ -435,6 +446,37 @@ function showToast(msg, type) {
   const t = document.getElementById('toast');
   t.textContent = msg; t.className = 'toast ' + type;
   setTimeout(() => t.classList.add('hidden'), 2800);
+}
+
+function speakEnglish() {
+  if (!cEn) return;
+  const btn = document.getElementById('speakBtn');
+
+  if (window.speechSynthesis.speaking) {
+    window.speechSynthesis.cancel();
+    btn.classList.remove('speaking');
+    btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg> 英語を聞く';
+    return;
+  }
+
+  const utter = new SpeechSynthesisUtterance(cEn);
+  utter.lang = 'en-US';
+  utter.rate = 0.9;
+
+  // 英語の声を選択
+  const voices = window.speechSynthesis.getVoices();
+  const enVoice = voices.find(v => v.lang.startsWith('en') && v.localService);
+  if (enVoice) utter.voice = enVoice;
+
+  btn.classList.add('speaking');
+  btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg> ■ 停止';
+
+  utter.onend = () => {
+    btn.classList.remove('speaking');
+    btn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg> 英語を聞く';
+  };
+
+  window.speechSynthesis.speak(utter);
 }
 
 function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
